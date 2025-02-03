@@ -39,6 +39,7 @@ static tSimpleBufferManager *s_pMainBuffer;
 static tSprite *s_pSprite0;
 static tSprite *s_pSprite1;
 static tBitMap *s_pSprite0Data;
+static tBitMap *s_pSprite1Data;
 
 static tFont *s_pFont;
 static tTextBitMap *s_pTextBitMap;
@@ -94,13 +95,22 @@ void gameGsCreate(void) {
      blitRect(s_pMainBuffer->pBack,16*i, 136, 16, 16,16+i);
   }
 
-  s_pSprite0Data = bitmapCreate(16, 34, 2, BMF_CLEAR); // 16x32 2BPP
+  s_pSprite0Data = bitmapCreate(16, 34, 2, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 2BPP
   blitRect(s_pSprite0Data,0, 0, 16, 4, 0);
   blitRect(s_pSprite0Data,0, 4, 16, 4, 1);
   blitRect(s_pSprite0Data,0, 8, 16, 4, 2);
   blitRect(s_pSprite0Data,0, 12, 16, 4, 3);
+
+ 
+  // You need to use 2 bitmaps, cause the sprite writes information to the sprite data.
+  s_pSprite1Data = bitmapCreate(16, 34, 2, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 2BPP
+  blitRect(s_pSprite1Data,0, 0, 16, 4, 0);
+  blitRect(s_pSprite1Data,0, 4, 16, 4, 1);
+  blitRect(s_pSprite1Data,0, 8, 16, 4, 2);
+  blitRect(s_pSprite1Data,0, 12, 16, 4, 3);
+  
   s_pSprite0 = spriteAdd(0, s_pSprite0Data); // Add sprite to channel 
-  s_pSprite1 = spriteAdd(3, s_pSprite0Data); // Add sprite to channel 
+  s_pSprite1 = spriteAdd(3, s_pSprite1Data); // Add sprite to channel 
   
   s_pSprite0->wX=100;
   s_pSprite0->wY=100;
@@ -142,7 +152,7 @@ void gameGsLoop(void) {
   }
 
   if(joyCheck(JOY1_UP)) {
-		s_pSprite0->wX-=2;
+		s_pSprite0->wY-=2;
 	}
 	if(joyCheck(JOY1_DOWN)) {
 		s_pSprite0->wY+=2;
@@ -154,10 +164,15 @@ void gameGsLoop(void) {
 		s_pSprite0->wX+=2;
 	}
   
+  spriteRequestMetadataUpdate(s_pSprite0);
+  
+  
   spriteProcess(s_pSprite0);
-   spriteProcess(s_pSprite1);
-
+  
+  
   spriteProcessChannel(0); // Should only be on create
+  spriteRequestMetadataUpdate(s_pSprite1);
+  spriteProcess(s_pSprite1);
   spriteProcessChannel(3); // Should only be on create
 
 
