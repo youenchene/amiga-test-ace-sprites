@@ -95,22 +95,30 @@ void gameGsCreate(void) {
      blitRect(s_pMainBuffer->pBack,16*i, 136, 16, 16,16+i);
   }
 
-  s_pSprite0Data = bitmapCreate(16, 34, 2, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 2BPP
+  s_pSprite0Data = bitmapCreate(16, 34, 4, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 2BPP
   blitRect(s_pSprite0Data,0, 0, 16, 4, 0);
   blitRect(s_pSprite0Data,0, 4, 16, 4, 1);
   blitRect(s_pSprite0Data,0, 8, 16, 4, 2);
   blitRect(s_pSprite0Data,0, 12, 16, 4, 3);
+  blitRect(s_pSprite0Data,0, 16, 16, 4, 4);
+  blitRect(s_pSprite0Data,0, 20, 16, 4, 5);
+  blitRect(s_pSprite0Data,0, 24, 16, 4, 6);
+  blitRect(s_pSprite0Data,0, 28, 16, 4, 7);
+  
 
  
   // You need to use 2 bitmaps, cause the sprite writes information to the sprite data.
   s_pSprite1Data = bitmapCreate(16, 34, 2, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 2BPP
-  blitRect(s_pSprite1Data,0, 0, 16, 4, 0);
-  blitRect(s_pSprite1Data,0, 4, 16, 4, 1);
-  blitRect(s_pSprite1Data,0, 8, 16, 4, 2);
-  blitRect(s_pSprite1Data,0, 12, 16, 4, 3);
+  blitRect(s_pSprite1Data,0, 0, 16, 4, 3);
+  blitRect(s_pSprite1Data,0, 4, 16, 4, 2);
+  blitRect(s_pSprite1Data,0, 8, 16, 4, 1);
+  blitRect(s_pSprite1Data,0, 12, 16, 4, 0);
   
   s_pSprite0 = spriteAdd(0, s_pSprite0Data); // Add sprite to channel 
-  s_pSprite1 = spriteAdd(3, s_pSprite1Data); // Add sprite to channel 
+  //s_pSprite01 = spriteAdd(1, s_pSprite0Data); // Add sprite to channel 
+  s_pSprite1 = spriteAdd(2, s_pSprite1Data); // Add sprite to channel 
+
+  //spriteSetAttached(s_pSprite01,1);
   
   s_pSprite0->wX=100;
   s_pSprite0->wY=100;
@@ -139,7 +147,7 @@ void gameGsCreate(void) {
   );
 
 	sprintf(szMsg, "Sprite");
-	fontDrawStr(s_pFont,  s_pMainBuffer->pFront, 90, 90, szMsg, 4, FONT_LEFT | FONT_TOP | FONT_COOKIE, s_pTextBitMap);
+	fontDrawStr(s_pFont,  s_pMainBuffer->pBack, 90, 90, szMsg, 4, FONT_LEFT | FONT_TOP | FONT_COOKIE, s_pTextBitMap);
 
 
 
