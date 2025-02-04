@@ -106,6 +106,11 @@ void gameGsCreate(void) {
   blitRect(s_pSprite0Data,0, 28, 16, 4, 7);
   
 
+  // https://github.com/Vairn/SmitACE/blob/main/src/misc/mouse_pointer.c
+  // http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0159.html
+  // g_pCustom->bplcon2 = whatever, where whatever is the value from the table on that link.
+  // after each time a view is set, cause the setting of a viewport sets this flag back to 0.
+
  
   // You need to use 2 bitmaps, cause the sprite writes information to the sprite data.
   s_pSprite1Data = bitmapCreate(16, 34, 2, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 2BPP
