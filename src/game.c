@@ -8,6 +8,7 @@
 #include <ace/utils/palette.h>
 #include <ace/managers/sprite.h> 
 #include <ace/utils/font.h>
+#include <ace/utils/custom.h>
 
 
 // Let's make code more readable by giving names to numbers
@@ -76,6 +77,26 @@ void gameGsCreate(void) {
 
   paletteLoadFromPath("data/flappypal6.plt", s_pVpScore->pPalette, 32);
 
+
+
+  s_pVpScore->pPalette[20]=  s_pVpScore->pPalette[0];
+  s_pVpScore->pPalette[21]=  s_pVpScore->pPalette[1];
+  s_pVpScore->pPalette[22]=  s_pVpScore->pPalette[2];
+  s_pVpScore->pPalette[23]=  s_pVpScore->pPalette[3];
+  s_pVpScore->pPalette[24]=  s_pVpScore->pPalette[4];
+  s_pVpScore->pPalette[25]=  s_pVpScore->pPalette[5];
+  s_pVpScore->pPalette[26]=  s_pVpScore->pPalette[6];
+  s_pVpScore->pPalette[27]=  s_pVpScore->pPalette[7];
+  s_pVpScore->pPalette[28]=  s_pVpScore->pPalette[8];
+  s_pVpScore->pPalette[29]=  s_pVpScore->pPalette[9];
+  s_pVpScore->pPalette[30]=  s_pVpScore->pPalette[10];
+  s_pVpScore->pPalette[31]=  s_pVpScore->pPalette[11];
+  s_pVpScore->pPalette[16]=  s_pVpScore->pPalette[12];
+  s_pVpScore->pPalette[17]=  s_pVpScore->pPalette[13];
+  s_pVpScore->pPalette[18]=  s_pVpScore->pPalette[14];
+  s_pVpScore->pPalette[19]=  s_pVpScore->pPalette[15];
+
+
   // Draw line separating score VPort and main VPort, leave one line blank after it
   blitLine(
     s_pScoreBuffer->pBack,
@@ -96,18 +117,27 @@ void gameGsCreate(void) {
   }
 
   s_pSprite0Data = bitmapCreate(16, 34, 4, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 2BPP
-  blitRect(s_pSprite0Data,0, 0, 16, 4, 0);
-  blitRect(s_pSprite0Data,0, 4, 16, 4, 1);
-  blitRect(s_pSprite0Data,0, 8, 16, 4, 2);
-  blitRect(s_pSprite0Data,0, 12, 16, 4, 3);
-  blitRect(s_pSprite0Data,0, 16, 16, 4, 4);
-  blitRect(s_pSprite0Data,0, 20, 16, 4, 5);
-  blitRect(s_pSprite0Data,0, 24, 16, 4, 6);
-  blitRect(s_pSprite0Data,0, 28, 16, 4, 7);
-  
+  blitRect(s_pSprite0Data,0, 0, 8, 4, 0);
+  blitRect(s_pSprite0Data,0, 4, 8, 4, 1);
+  blitRect(s_pSprite0Data,0, 8, 8, 4, 2);
+  blitRect(s_pSprite0Data,0, 12, 8, 4, 3);
+  blitRect(s_pSprite0Data,0, 16, 8, 4, 4);
+  blitRect(s_pSprite0Data,0, 20, 8, 4, 5);
+  blitRect(s_pSprite0Data,0, 24, 8, 4, 6);
+  blitRect(s_pSprite0Data,0, 28, 8, 4, 7);
+  blitRect(s_pSprite0Data,8, 0, 8, 4, 8);
+  blitRect(s_pSprite0Data,8, 4, 8, 4, 9);
+  blitRect(s_pSprite0Data,8, 8, 8, 4, 10);
+  blitRect(s_pSprite0Data,8, 12, 8, 4, 11);
+  blitRect(s_pSprite0Data,8, 16,8, 4, 12);
+  blitRect(s_pSprite0Data,8, 20, 8, 4, 13);
+  blitRect(s_pSprite0Data,8, 24, 8, 4, 14);
+  blitRect(s_pSprite0Data,8, 28, 8, 4, 15);
+
 
   // https://github.com/Vairn/SmitACE/blob/main/src/misc/mouse_pointer.c
   // http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0159.html
+  // http://www.amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node00AE.html
   // g_pCustom->bplcon2 = whatever, where whatever is the value from the table on that link.
   // after each time a view is set, cause the setting of a viewport sets this flag back to 0.
 
@@ -125,8 +155,9 @@ void gameGsCreate(void) {
 
   //spriteSetAttached(s_pSprite01,1);
   
-  s_pSprite0->wX=100;
-  s_pSprite0->wY=100;
+
+  spriteSetPos(s_pSprite0,100,100);
+  
   s_pSprite1->wX=200;
   s_pSprite1->wY=100;
   spriteSetEnabled(s_pSprite0,1);
@@ -136,6 +167,9 @@ void gameGsCreate(void) {
 
   // Load the view
   viewLoad(s_pView);
+
+  // Reset blcon2 to put sprite in front of http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0159.html
+  g_pCustom->bplcon2=0b00100000;
 
 
 	char szMsg[50];
@@ -165,28 +199,24 @@ void gameGsLoop(void) {
   }
 
   if(joyCheck(JOY1_UP)) {
-		s_pSprite0->wY-=2;
+		spriteSetPosY(s_pSprite0,s_pSprite0->wY-2);
 	}
 	if(joyCheck(JOY1_DOWN)) {
-		s_pSprite0->wY+=2;
+		spriteSetPosY(s_pSprite0,s_pSprite0->wY+2);
 	}
 	if(joyCheck(JOY1_LEFT)) {
-		s_pSprite0->wX-=2;
+		spriteSetPosX(s_pSprite0,s_pSprite0->wX-2);
 	}
 	if(joyCheck(JOY1_RIGHT)) {
-		s_pSprite0->wX+=2;
+		spriteSetPosX(s_pSprite0,s_pSprite0->wX+2);
 	}
-  
-  spriteRequestMetadataUpdate(s_pSprite0);
   
   
   spriteProcess(s_pSprite0);
-  
-  
   spriteProcessChannel(0); // Should only be on create
-  spriteRequestMetadataUpdate(s_pSprite1);
+
   spriteProcess(s_pSprite1);
-  spriteProcessChannel(3); // Should only be on create
+  spriteProcessChannel(2); // Should only be on create
 
 
 
