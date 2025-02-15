@@ -6,9 +6,10 @@
 #include <ace/managers/blit.h> // Blitting fns
 #include <ace/managers/joy.h>
 #include <ace/utils/palette.h>
-#include <ace/managers/sprite.h> 
+#include <ace/managers/advancedsprite.h> 
 #include <ace/utils/font.h>
 #include <ace/utils/custom.h>
+#include <ace/managers/rand.h>
 
 
 // Let's make code more readable by giving names to numbers
@@ -37,15 +38,29 @@ static tVPort *s_pVpScore; // Viewport for score
 static tSimpleBufferManager *s_pScoreBuffer;
 static tVPort *s_pVpMain; // Viewport for playfield
 static tSimpleBufferManager *s_pMainBuffer;
-static tSprite *s_pSprite0;
-static tSprite *s_pSprite1;
-static tBitMap *s_pSprite0Data;
-static tBitMap *s_pSprite1Data;
+static tAdvancedSprite *s_pASprite4;
+static tAdvancedSprite *s_pASprite6;
+static tAdvancedSprite *s_pASprite0;
+static tBitMap *s_pStripe;
+static tBitMap *s_pStripe32;
+static tBitMap *s_pStripe32;
+static tBitMap *s_pStripe416;
+static tBitMap *s_pStripe432;
+
+tRandManager *g_sRand;
 
 static tFont *s_pFont;
 static tTextBitMap *s_pTextBitMap;
 
+static int frame=0;
+
+static int spritecontrol=0;
+
 void gameGsCreate(void) {
+
+
+  g_sRand=randCreate(456,876);
+
   s_pView = viewCreate(0, 
   TAG_VIEW_GLOBAL_PALETTE, 1,
   
@@ -104,9 +119,7 @@ void gameGsCreate(void) {
     s_pVpScore->uwWidth - 1, s_pVpScore->uwHeight - 2,
     SCORE_COLOR, 0xFFFF, 0 // Try patterns 0xAAAA, 0xEEEE, etc.
   );
-
-  spriteManagerCreate(s_pView, 0);
-   systemSetDmaBit(DMAB_SPRITE, 1); 
+ 
 
   for(UWORD i=0; i < 16;i++)  {
      blitRect(s_pMainBuffer->pBack,16*i, 120, 16, 16,i);
@@ -116,60 +129,77 @@ void gameGsCreate(void) {
      blitRect(s_pMainBuffer->pBack,16*i, 136, 16, 16,16+i);
   }
 
-  s_pSprite0Data = bitmapCreate(16, 34, 4, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 2BPP
-  blitRect(s_pSprite0Data,0, 0, 8, 4, 0);
-  blitRect(s_pSprite0Data,0, 4, 8, 4, 1);
-  blitRect(s_pSprite0Data,0, 8, 8, 4, 2);
-  blitRect(s_pSprite0Data,0, 12, 8, 4, 3);
-  blitRect(s_pSprite0Data,0, 16, 8, 4, 4);
-  blitRect(s_pSprite0Data,0, 20, 8, 4, 5);
-  blitRect(s_pSprite0Data,0, 24, 8, 4, 6);
-  blitRect(s_pSprite0Data,0, 28, 8, 4, 7);
-  blitRect(s_pSprite0Data,8, 0, 8, 4, 8);
-  blitRect(s_pSprite0Data,8, 4, 8, 4, 9);
-  blitRect(s_pSprite0Data,8, 8, 8, 4, 10);
-  blitRect(s_pSprite0Data,8, 12, 8, 4, 11);
-  blitRect(s_pSprite0Data,8, 16,8, 4, 12);
-  blitRect(s_pSprite0Data,8, 20, 8, 4, 13);
-  blitRect(s_pSprite0Data,8, 24, 8, 4, 14);
-  blitRect(s_pSprite0Data,8, 28, 8, 4, 15);
 
 
-  // https://github.com/Vairn/SmitACE/blob/main/src/misc/mouse_pointer.c
-  // http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0159.html
-  // http://www.amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node00AE.html
-  // g_pCustom->bplcon2 = whatever, where whatever is the value from the table on that link.
-  // after each time a view is set, cause the setting of a viewport sets this flag back to 0.
+  advancedSpriteManagerCreate(s_pView, 0);
+  systemSetDmaBit(DMAB_SPRITE, 1);
 
- 
-  // You need to use 2 bitmaps, cause the sprite writes information to the sprite data.
-  s_pSprite1Data = bitmapCreate(16, 34, 2, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 2BPP
-  blitRect(s_pSprite1Data,0, 0, 16, 4, 3);
-  blitRect(s_pSprite1Data,0, 4, 16, 4, 2);
-  blitRect(s_pSprite1Data,0, 8, 16, 4, 1);
-  blitRect(s_pSprite1Data,0, 12, 16, 4, 0);
-  
-  s_pSprite0 = spriteAdd(0, s_pSprite0Data); // Add sprite to channel 
-  //s_pSprite01 = spriteAdd(1, s_pSprite0Data); // Add sprite to channel 
-  s_pSprite1 = spriteAdd(2, s_pSprite1Data); // Add sprite to channel 
+  // 4 col 16px sprite
+  s_pStripe = bitmapCreate(16, 32*10, 2, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 2BPP
+  for(int i=0; i<10; i++) {
+    char msg[50];
+    sprintf(msg, "%d",i);
+	  fontDrawStr(s_pFont,  s_pStripe, 0, i*32+0, msg, 1, FONT_LEFT | FONT_TOP | FONT_COOKIE, s_pTextBitMap);
+    for(int j=0; j<4; j++) {
+      blitRect(s_pStripe,8*(j%2), i*32+8+8*((j-1>0)&1), randUwMinMax(g_sRand,4,8), randUwMinMax(g_sRand,4,8), j);
+    }
+  }
+  s_pASprite4 = advancedSpriteAdd(4, s_pStripe, 32);
+  advancedSpriteSetPos(s_pASprite4,80,100);
 
-  //spriteSetAttached(s_pSprite01,1);
-  
+  // 4 col 32px sprite
+  s_pStripe32 = bitmapCreate(32, 32*10, 2, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 2BPP
+  for(int i=0; i<10; i++) {
+    char msg[50];
+    sprintf(msg, "%d",i);
+	  fontDrawStr(s_pFont,  s_pStripe32, 0, i*32+0, msg, 1, FONT_LEFT | FONT_TOP | FONT_COOKIE, s_pTextBitMap);
+    for(int j=0; j<4; j++) {
+      blitRect(s_pStripe32,16*(j%2), i*32+8+8*((j-1>0)&1), randUwMinMax(g_sRand,8,16), randUwMinMax(g_sRand,4,8), j);
+    }
+  }
+  s_pASprite6 = advancedSpriteAdd(6, s_pStripe32, 32);
+  advancedSpriteSetPos(s_pASprite6,180,100);
 
-  spriteSetPos(s_pSprite0,100,100);
-  
-  s_pSprite1->wX=200;
-  s_pSprite1->wY=100;
-  spriteSetEnabled(s_pSprite0,1);
-  spriteSetEnabled(s_pSprite1,1);
+  // 16 col 16px sprite
+  /*
+  s_pStripe416 = bitmapCreate(16, 32*10, 4, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 4BPP
+  for(int i=0; i<10; i++) {
+    char msg[50];
+    sprintf(msg, "%d",i);
+	  fontDrawStr(s_pFont,  s_pStripe416, 0, i*32+0, msg, 1, FONT_LEFT | FONT_TOP | FONT_COOKIE, s_pTextBitMap);
+    for(int j=0; j<4; j++) {
+      blitRect(s_pStripe416,0, i*32+8+4*j, randUwMinMax(g_sRand,2,4), randUwMinMax(g_sRand,2,4), j*2);
+      blitRect(s_pStripe416,4, i*32+8+4*j, randUwMinMax(g_sRand,2,4), randUwMinMax(g_sRand,2,4), j*2+1);
+      blitRect(s_pStripe416,8, i*32+8+4*j, randUwMinMax(g_sRand,2,4), randUwMinMax(g_sRand,2,4), 8+j*2);
+       blitRect(s_pStripe416,12, i*32+8+4*j, randUwMinMax(g_sRand,2,4), randUwMinMax(g_sRand,2,4), 8+j*2+1);
+    }
+  }
+  s_pASprite0 = advancedSpriteAdd(0, s_pStripe416, 32);
+ */
+
+  s_pStripe432 = bitmapCreate(32, 32*10, 4, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 4BPP
+  for(int i=0; i<10; i++) {
+    char msg[50];
+    sprintf(msg, "%d",i);
+	  fontDrawStr(s_pFont,  s_pStripe432, 0, i*32+0, msg, 1, FONT_LEFT | FONT_TOP | FONT_COOKIE, s_pTextBitMap);
+    for(int j=0; j<4; j++) {
+      blitRect(s_pStripe432,0, i*32+8+4*j, randUwMinMax(g_sRand,4,8), randUwMinMax(g_sRand,2,4), j*2);
+      blitRect(s_pStripe432,8, i*32+8+4*j, randUwMinMax(g_sRand,4,8), randUwMinMax(g_sRand,2,4), j*2+1);
+      blitRect(s_pStripe432,16, i*32+8+4*j, randUwMinMax(g_sRand,4,8), randUwMinMax(g_sRand,2,4), 8+j*2);
+      blitRect(s_pStripe432,24, i*32+8+4*j, randUwMinMax(g_sRand,4,8), randUwMinMax(g_sRand,2,4), 8+j*2+1);
+    }
+  }
+  s_pASprite0 = advancedSpriteAdd(0, s_pStripe432, 32);
+
+
+  advancedSpriteSetPos(s_pASprite0,280,100);
+
+
+
                              
-  systemUnuse();
 
-  // Load the view
-  viewLoad(s_pView);
 
-  // Reset blcon2 to put sprite in front of http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0159.html
-  g_pCustom->bplcon2=0b00100000;
+
 
 
 	char szMsg[50];
@@ -178,7 +208,7 @@ void gameGsCreate(void) {
 
 
   blitCopy(
-    s_pSprite0Data, 0, 0,
+    s_pStripe416, 0, 0,
     s_pMainBuffer->pFront,
     16,16,
     16, 32,
@@ -187,38 +217,84 @@ void gameGsCreate(void) {
 
 	sprintf(szMsg, "Sprite");
 	fontDrawStr(s_pFont,  s_pMainBuffer->pBack, 90, 90, szMsg, 4, FONT_LEFT | FONT_TOP | FONT_COOKIE, s_pTextBitMap);
+  bitmapDestroy(s_pStripe);
 
 
+    systemUnuse();
 
+      // Load the view
+  viewLoad(s_pView);
+
+  // Reset blcon2 to put sprite in front of http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0159.html
+  g_pCustom->bplcon2=0b00100000;
 }
 
 void gameGsLoop(void) {
+
   if(keyCheck(KEY_ESCAPE)) {
     gameExit();
     return; 
   }
 
+  tAdvancedSprite *sprite;
+  
+  switch (spritecontrol)
+  {
+  case 0:
+    sprite=s_pASprite4;
+    break;
+
+  case 1:
+    sprite=s_pASprite6;
+    break;
+  
+  case 2:
+    sprite=s_pASprite0;
+    break;
+
+  default:
+    sprite=s_pASprite4;
+    break;
+  }
+
+  if(keyCheck(KEY_SPACE)) {
+    spritecontrol++;
+    if (spritecontrol>2) {
+      spritecontrol=0;
+    }
+  }
+
   if(joyCheck(JOY1_UP)) {
-		spriteSetPosY(s_pSprite0,s_pSprite0->wY-2);
+		advancedSpriteSetPosY(sprite,sprite->wY-2);
 	}
 	if(joyCheck(JOY1_DOWN)) {
-		spriteSetPosY(s_pSprite0,s_pSprite0->wY+2);
+		advancedSpriteSetPosY(sprite,sprite->wY+2);
 	}
 	if(joyCheck(JOY1_LEFT)) {
-		spriteSetPosX(s_pSprite0,s_pSprite0->wX-2);
+		advancedSpriteSetPosX(sprite,sprite->wX-2);
 	}
 	if(joyCheck(JOY1_RIGHT)) {
-		spriteSetPosX(s_pSprite0,s_pSprite0->wX+2);
+		advancedSpriteSetPosX(sprite,sprite->wX+2);
+	}
+
+  if(joyCheck(JOY1_FIRE)) {
+    frame++;
+    if (frame>=10) {
+      frame=0;
+    }
+    advancedSpriteSetFrame(sprite,frame);
 	}
   
   
-  spriteProcess(s_pSprite0);
-  spriteProcessChannel(0); // Should only be on create
+  advancedSpriteProcess(s_pASprite0);
+  advancedSpriteProcessChannel(0,s_pASprite0); 
 
-  spriteProcess(s_pSprite1);
-  spriteProcessChannel(2); // Should only be on create
+  advancedSpriteProcess(s_pASprite4);
+  advancedSpriteProcessChannel(4,s_pASprite4); 
 
-
+  advancedSpriteProcess(s_pASprite6);
+  advancedSpriteProcessChannel(6,s_pASprite6); 
+  
 
   copProcessBlocks();
 
@@ -229,12 +305,13 @@ void gameGsDestroy(void) {
   systemUse();
 	fontDestroyTextBitMap(s_pTextBitMap);
 	fontDestroy(s_pFont);
-  bitmapDestroy(s_pSprite0Data);
-
-  spriteRemove(s_pSprite0);
+  randDestroy(g_sRand);
+  advancedSpriteRemove(s_pASprite0);
+  advancedSpriteRemove(s_pASprite4);
+  advancedSpriteRemove(s_pASprite6);
 
   systemSetDmaBit(DMAB_SPRITE, 0); // Disable sprite DMA
-  spriteManagerDestroy();
+  advancedSpriteManagerDestroy();
 
   // This will also destroy all associated viewports and viewport managers
   viewDestroy(s_pView);
