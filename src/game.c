@@ -1,4 +1,5 @@
 #include "game.h"
+#include "util.h"
 #include <ace/managers/key.h>
 #include <ace/managers/game.h>
 #include <ace/managers/system.h>
@@ -47,6 +48,9 @@ static tBitMap *s_pStripe32;
 static tBitMap *s_pStripe416;
 static tBitMap *s_pStripe432;
 
+static tBitMap *s_Block;
+static tBitMap *s_Block_InvX;
+
 tRandManager *g_sRand;
 
 static tFont *s_pFont;
@@ -55,6 +59,8 @@ static tTextBitMap *s_pTextBitMap;
 static int frame=0;
 
 static int spritecontrol=0;
+
+
 
 void gameGsCreate(void) {
 
@@ -208,10 +214,39 @@ void gameGsCreate(void) {
 
 
   blitCopy(
-    s_pStripe416, 0, 0,
+    s_pStripe432, 0, 0,
     s_pMainBuffer->pFront,
     16,16,
-    16, 32,
+    32, 32,
+    MINTERM_COOKIE
+  );
+
+  s_Block = bitmapCreate(32, 32, 4, BMF_CLEAR|BMF_INTERLEAVED); 
+
+  blitCopy(
+    s_pStripe432, 0, 0,
+    s_Block,
+    0,0,
+    32, 32,
+    MINTERM_COOKIE
+  );
+
+  blitCopy(
+    s_Block, 0, 0,
+    s_pMainBuffer->pFront,
+    100,16,
+    32, 32,
+    MINTERM_COOKIE
+  );
+
+
+  s_Block_InvX=xFlipInterleavedBitmap(s_Block);
+
+  blitCopy(
+    s_Block_InvX, 0, 0,
+    s_pMainBuffer->pFront,
+    200,16,
+    32, 32,
     MINTERM_COOKIE
   );
 
