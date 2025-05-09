@@ -61,6 +61,9 @@ static int frame=0;
 static int spritecontrol=0;
 
 
+static tBitMap *s_pEnemies;
+
+
 
 void gameGsCreate(void) {
 
@@ -96,27 +99,10 @@ void gameGsCreate(void) {
   s_pFont = fontCreateFromPath("data/fonts/silkscreen.fnt");
 	s_pTextBitMap = fontCreateTextBitMap(320, s_pFont->uwHeight);
 
-  paletteLoadFromPath("data/flappypal6.plt", s_pVpScore->pPalette, 32);
+  paletteLoadFromPath("data/W1-palette.gpl", s_pVpScore->pPalette, 32);
 
-
-
-  s_pVpScore->pPalette[20]=  s_pVpScore->pPalette[0];
-  s_pVpScore->pPalette[21]=  s_pVpScore->pPalette[1];
-  s_pVpScore->pPalette[22]=  s_pVpScore->pPalette[2];
-  s_pVpScore->pPalette[23]=  s_pVpScore->pPalette[3];
-  s_pVpScore->pPalette[24]=  s_pVpScore->pPalette[4];
-  s_pVpScore->pPalette[25]=  s_pVpScore->pPalette[5];
-  s_pVpScore->pPalette[26]=  s_pVpScore->pPalette[6];
-  s_pVpScore->pPalette[27]=  s_pVpScore->pPalette[7];
-  s_pVpScore->pPalette[28]=  s_pVpScore->pPalette[8];
-  s_pVpScore->pPalette[29]=  s_pVpScore->pPalette[9];
-  s_pVpScore->pPalette[30]=  s_pVpScore->pPalette[10];
-  s_pVpScore->pPalette[31]=  s_pVpScore->pPalette[11];
-  s_pVpScore->pPalette[16]=  s_pVpScore->pPalette[12];
-  s_pVpScore->pPalette[17]=  s_pVpScore->pPalette[13];
-  s_pVpScore->pPalette[18]=  s_pVpScore->pPalette[14];
-  s_pVpScore->pPalette[19]=  s_pVpScore->pPalette[15];
-
+  memcpy(s_pVpScore->pPalette, s_pPalette, sizeof(s_pVpScore->pPalette));
+	memcpy(s_pVpMain->pPalette, s_pPalette, sizeof(s_pVpMain->pPalette));
 
   // Draw line separating score VPort and main VPort, leave one line blank after it
   blitLine(
@@ -125,137 +111,13 @@ void gameGsCreate(void) {
     s_pVpScore->uwWidth - 1, s_pVpScore->uwHeight - 2,
     SCORE_COLOR, 0xFFFF, 0 // Try patterns 0xAAAA, 0xEEEE, etc.
   );
- 
-
-  for(UWORD i=0; i < 16;i++)  {
-     blitRect(s_pMainBuffer->pBack,16*i, 120, 16, 16,i);
-  }
-    
-  for(UWORD i=0; i < 16;i++)  {
-     blitRect(s_pMainBuffer->pBack,16*i, 136, 16, 16,16+i);
-  }
-
-
 
   advancedSpriteManagerCreate(s_pView, 0);
   systemSetDmaBit(DMAB_SPRITE, 1);
+  
+  s_pEnemies= bitmapCreateFromPath("data/enemies-sprites.bm", 0);
 
-  // 4 col 16px sprite
-  s_pStripe = bitmapCreate(16, 32*10, 2, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 2BPP
-  for(int i=0; i<10; i++) {
-    char msg[50];
-    sprintf(msg, "%d",i);
-	  fontDrawStr(s_pFont,  s_pStripe, 0, i*32+0, msg, 1, FONT_LEFT | FONT_TOP | FONT_COOKIE, s_pTextBitMap);
-    for(int j=0; j<4; j++) {
-      blitRect(s_pStripe,8*(j%2), i*32+8+8*((j-1>0)&1), randUwMinMax(g_sRand,4,8), randUwMinMax(g_sRand,4,8), j);
-    }
-  }
-  s_pASprite4 = advancedSpriteAdd(4, s_pStripe, 32);
-  advancedSpriteSetPos(s_pASprite4,80,100);
-
-  // 4 col 32px sprite
-  s_pStripe32 = bitmapCreate(32, 32*10, 2, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 2BPP
-  for(int i=0; i<10; i++) {
-    char msg[50];
-    sprintf(msg, "%d",i);
-	  fontDrawStr(s_pFont,  s_pStripe32, 0, i*32+0, msg, 1, FONT_LEFT | FONT_TOP | FONT_COOKIE, s_pTextBitMap);
-    for(int j=0; j<4; j++) {
-      blitRect(s_pStripe32,16*(j%2), i*32+8+8*((j-1>0)&1), randUwMinMax(g_sRand,8,16), randUwMinMax(g_sRand,4,8), j);
-    }
-  }
-  s_pASprite6 = advancedSpriteAdd(6, s_pStripe32, 32);
-  advancedSpriteSetPos(s_pASprite6,180,100);
-
-  // 16 col 16px sprite
-  /*
-  s_pStripe416 = bitmapCreate(16, 32*10, 4, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 4BPP
-  for(int i=0; i<10; i++) {
-    char msg[50];
-    sprintf(msg, "%d",i);
-	  fontDrawStr(s_pFont,  s_pStripe416, 0, i*32+0, msg, 1, FONT_LEFT | FONT_TOP | FONT_COOKIE, s_pTextBitMap);
-    for(int j=0; j<4; j++) {
-      blitRect(s_pStripe416,0, i*32+8+4*j, randUwMinMax(g_sRand,2,4), randUwMinMax(g_sRand,2,4), j*2);
-      blitRect(s_pStripe416,4, i*32+8+4*j, randUwMinMax(g_sRand,2,4), randUwMinMax(g_sRand,2,4), j*2+1);
-      blitRect(s_pStripe416,8, i*32+8+4*j, randUwMinMax(g_sRand,2,4), randUwMinMax(g_sRand,2,4), 8+j*2);
-       blitRect(s_pStripe416,12, i*32+8+4*j, randUwMinMax(g_sRand,2,4), randUwMinMax(g_sRand,2,4), 8+j*2+1);
-    }
-  }
-  s_pASprite0 = advancedSpriteAdd(0, s_pStripe416, 32);
- */
-
-  s_pStripe432 = bitmapCreate(32, 32*10, 4, BMF_CLEAR|BMF_INTERLEAVED); // 16x32 4BPP
-  for(int i=0; i<10; i++) {
-    char msg[50];
-    sprintf(msg, "%d",i);
-	  fontDrawStr(s_pFont,  s_pStripe432, 0, i*32+0, msg, 1, FONT_LEFT | FONT_TOP | FONT_COOKIE, s_pTextBitMap);
-    for(int j=0; j<4; j++) {
-      blitRect(s_pStripe432,0, i*32+8+4*j, randUwMinMax(g_sRand,4,8), randUwMinMax(g_sRand,2,4), j*2);
-      blitRect(s_pStripe432,8, i*32+8+4*j, randUwMinMax(g_sRand,4,8), randUwMinMax(g_sRand,2,4), j*2+1);
-      blitRect(s_pStripe432,16, i*32+8+4*j, randUwMinMax(g_sRand,4,8), randUwMinMax(g_sRand,2,4), 8+j*2);
-      blitRect(s_pStripe432,24, i*32+8+4*j, randUwMinMax(g_sRand,4,8), randUwMinMax(g_sRand,2,4), 8+j*2+1);
-    }
-  }
-  s_pASprite0 = advancedSpriteAdd(0, s_pStripe432, 32);
-
-
-  advancedSpriteSetPos(s_pASprite0,280,100);
-
-
-
-                             
-
-
-
-
-
-	char szMsg[50];
-	sprintf(szMsg, "BlitCopy");
-	fontDrawStr(s_pFont,  s_pMainBuffer->pFront, 8, 8, szMsg, 4, FONT_LEFT | FONT_TOP | FONT_COOKIE, s_pTextBitMap);
-
-
-  blitCopy(
-    s_pStripe432, 0, 0,
-    s_pMainBuffer->pFront,
-    16,16,
-    32, 32,
-    MINTERM_COOKIE
-  );
-
-  s_Block = bitmapCreate(32, 32, 4, BMF_CLEAR|BMF_INTERLEAVED); 
-
-  blitCopy(
-    s_pStripe432, 0, 0,
-    s_Block,
-    0,0,
-    32, 32,
-    MINTERM_COOKIE
-  );
-
-  blitCopy(
-    s_Block, 0, 0,
-    s_pMainBuffer->pFront,
-    100,16,
-    32, 32,
-    MINTERM_COOKIE
-  );
-
-
-  s_Block_InvX=xFlipInterleavedBitmap(s_Block);
-
-  blitCopy(
-    s_Block_InvX, 0, 0,
-    s_pMainBuffer->pFront,
-    200,16,
-    32, 32,
-    MINTERM_COOKIE
-  );
-
-	sprintf(szMsg, "Sprite");
-	fontDrawStr(s_pFont,  s_pMainBuffer->pBack, 90, 90, szMsg, 4, FONT_LEFT | FONT_TOP | FONT_COOKIE, s_pTextBitMap);
-  bitmapDestroy(s_pStripe);
-
-
-    systemUnuse();
+  systemUnuse();
 
       // Load the view
   viewLoad(s_pView);
@@ -321,15 +183,8 @@ void gameGsLoop(void) {
 	}
   
   
-  advancedSpriteProcess(s_pASprite0);
-  advancedSpriteProcessChannel(0,s_pASprite0); 
-
-  advancedSpriteProcess(s_pASprite4);
-  advancedSpriteProcessChannel(4,s_pASprite4); 
-
-  advancedSpriteProcess(s_pASprite6);
-  advancedSpriteProcessChannel(6,s_pASprite6); 
-  
+  //advancedSpriteProcess(s_pASprite0);
+  //advancedSpriteProcessChannel(0,s_pASprite0); 
 
   copProcessBlocks();
 
@@ -341,10 +196,8 @@ void gameGsDestroy(void) {
 	fontDestroyTextBitMap(s_pTextBitMap);
 	fontDestroy(s_pFont);
   randDestroy(g_sRand);
-  advancedSpriteRemove(s_pASprite0);
-  advancedSpriteRemove(s_pASprite4);
-  advancedSpriteRemove(s_pASprite6);
-
+  bitmapDestroy(s_pEnemies);
+}
   systemSetDmaBit(DMAB_SPRITE, 0); // Disable sprite DMA
   advancedSpriteManagerDestroy();
 
