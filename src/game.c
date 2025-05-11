@@ -39,69 +39,84 @@ static tVPort *s_pVpScore; // Viewport for score
 static tSimpleBufferManager *s_pScoreBuffer;
 static tVPort *s_pVpMain; // Viewport for playfield
 static tSimpleBufferManager *s_pMainBuffer;
-static tAdvancedSprite *s_pASprite4;
-static tAdvancedSprite *s_pASprite6;
-static tAdvancedSprite *s_pASprite0;
-static tBitMap *s_pStripe;
-static tBitMap *s_pStripe32;
-static tBitMap *s_pStripe32;
-static tBitMap *s_pStripe416;
-static tBitMap *s_pStripe432;
+//static tAdvancedSprite *s_pASprite4;
+//static tAdvancedSprite *s_pASprite6;
+//static tAdvancedSprite *s_pASprite0;
 
-static tBitMap *s_Block;
-static tBitMap *s_Block_InvX;
+static UWORD s_pPalette[32];
+//static tBitMap *s_pStripe;
+//static tBitMap *s_pStripe32;
+//static tBitMap *s_pStripe32;
+//static tBitMap *s_pStripe416;
+//static tBitMap *s_pStripe432;
 
-tRandManager *g_sRand;
+//static tBitMap *s_Block;
+//static tBitMap *s_Block_InvX;
+
+//tRandManager *g_sRand;
 
 static tFont *s_pFont;
 static tTextBitMap *s_pTextBitMap;
 
-static int frame=0;
+//static int frame=0;
 
-static int spritecontrol=0;
+//static int spritecontrol=0;
 
 
-static tBitMap *s_pEnemies;
+//static tBitMap *s_pEnemies;
 
+
+//Sprites
+static tAdvancedSprite *s_pEnemies;
+
+typedef struct tEnemy {
+	WORD x;
+	WORD y;
+  UBYTE frame;
+  UBYTE speed;
+} tEnemy;
+
+tEnemy s_pEnemiesList[10];
 
 
 void gameGsCreate(void) {
 
 
-  g_sRand=randCreate(456,876);
+  //g_sRand=randCreate(456,876);
 
   s_pView = viewCreate(0, 
   TAG_VIEW_GLOBAL_PALETTE, 1,
-  
   TAG_END);
 
-  // Viewport for score bar - on top of screen
-  s_pVpScore = vPortCreate(0,
-    TAG_VPORT_VIEW, s_pView,
-    TAG_VPORT_BPP, 5,
-    TAG_VPORT_HEIGHT, 32,
-  TAG_END);
-  s_pScoreBuffer = simpleBufferCreate(0,
-    TAG_SIMPLEBUFFER_VPORT, s_pVpScore,
-    TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
-  TAG_END);
+	s_pVpScore = vPortCreate(0,
+		TAG_VPORT_VIEW, s_pView,
+		TAG_VPORT_BPP, 5,
+		TAG_VPORT_HEIGHT, 16,
+	TAG_END);
 
-  // Now let's do the same for main playfield
-  s_pVpMain = vPortCreate(0,
-    TAG_VPORT_VIEW, s_pView,
-    TAG_VPORT_BPP, 5,
-  TAG_END);
+	s_pScoreBuffer = simpleBufferCreate(0,
+		TAG_SIMPLEBUFFER_VPORT, s_pVpScore,
+		TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
+		TAG_SIMPLEBUFFER_BOUND_WIDTH, 320,
+		TAG_SIMPLEBUFFER_BOUND_HEIGHT, 16,
+	TAG_END);
+
+	// Now let's do the same for main playfield
+	s_pVpMain = vPortCreate(0,
+		TAG_VPORT_VIEW, s_pView,
+		TAG_VPORT_BPP, 5,
+	TAG_END);
+
   s_pMainBuffer = simpleBufferCreate(0,
     TAG_SIMPLEBUFFER_VPORT, s_pVpMain,
-    TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR,
+    TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
   TAG_END);
 
   s_pFont = fontCreateFromPath("data/fonts/silkscreen.fnt");
 	s_pTextBitMap = fontCreateTextBitMap(320, s_pFont->uwHeight);
 
-  paletteLoadFromPath("data/W1-palette.gpl", s_pVpScore->pPalette, 32);
-
-  memcpy(s_pVpScore->pPalette, s_pPalette, sizeof(s_pVpScore->pPalette));
+  paletteLoadFromPath("data/W1-palette.plt", s_pPalette, 32);
+	memcpy(s_pVpScore->pPalette, s_pPalette, sizeof(s_pVpScore->pPalette));
 	memcpy(s_pVpMain->pPalette, s_pPalette, sizeof(s_pVpMain->pPalette));
 
   // Draw line separating score VPort and main VPort, leave one line blank after it
@@ -112,10 +127,35 @@ void gameGsCreate(void) {
     SCORE_COLOR, 0xFFFF, 0 // Try patterns 0xAAAA, 0xEEEE, etc.
   );
 
-  advancedSpriteManagerCreate(s_pView, 0);
+  //sky
+  blitRect(s_pMainBuffer->pBack,0, 0, 320, 240, 4);
+  //cloud
+  blitRect(s_pMainBuffer->pBack,200, 80, 30, 20, 31);
+  blitRect(s_pMainBuffer->pBack,220, 86, 30, 20, 31);
+  blitRect(s_pMainBuffer->pBack,240, 82, 20, 15, 31);
+
+  //cloud
+  blitRect(s_pMainBuffer->pBack,90, 140, 20, 20, 30);
+  blitRect(s_pMainBuffer->pBack,100, 146, 30, 20, 30);
+  blitRect(s_pMainBuffer->pBack,120, 142, 20, 18, 30);
+  
+  spriteManagerCreate(s_pView, 0);
   systemSetDmaBit(DMAB_SPRITE, 1);
   
-  s_pEnemies= bitmapCreateFromPath("data/enemies-sprites.bm", 0);
+  tBitMap *s_pSpriteEnemies=bitmapCreateFromPath("data/enemies-sprites.bm", 0);
+
+
+  s_pEnemiesList[0].x=310;
+  s_pEnemiesList[0].y=40;
+  s_pEnemiesList[0].frame=5;
+  s_pEnemiesList[0].speed=3;
+
+  s_pEnemies = advancedSpriteAdd(0, 16, s_pSpriteEnemies, NULL); // Add Main sprite to channel 0
+	bitmapDestroy(s_pSpriteEnemies);
+
+	advancedSpriteSetPos(s_pEnemies, s_pEnemiesList[0].x,s_pEnemiesList[0].y);
+  advancedSpriteSetFrame(s_pEnemies,s_pEnemiesList[0].frame);
+
 
   systemUnuse();
 
@@ -124,67 +164,33 @@ void gameGsCreate(void) {
 
   // Reset blcon2 to put sprite in front of http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0159.html
   g_pCustom->bplcon2=0b00100000;
+  logWrite("Create Done !");
 }
 
 void gameGsLoop(void) {
-
   if(keyCheck(KEY_ESCAPE)) {
     gameExit();
     return; 
   }
 
-  tAdvancedSprite *sprite;
-  
-  switch (spritecontrol)
-  {
-  case 0:
-    sprite=s_pASprite4;
-    break;
-
-  case 1:
-    sprite=s_pASprite6;
-    break;
-  
-  case 2:
-    sprite=s_pASprite0;
-    break;
-
-  default:
-    sprite=s_pASprite4;
-    break;
+  s_pEnemiesList[0].x-=s_pEnemiesList[0].speed;
+  if (s_pEnemiesList[0].x < -32) {
+    s_pEnemiesList[0].x=320;
   }
+  s_pEnemiesList[0].y=40;
+  s_pEnemiesList[0].frame++;
+  if (s_pEnemiesList[0].frame > 9) {
+    s_pEnemiesList[0].frame=5;
+  } 
 
-  if(keyCheck(KEY_SPACE)) {
-    spritecontrol++;
-    if (spritecontrol>2) {
-      spritecontrol=0;
-    }
-  }
-
-  if(joyCheck(JOY1_UP)) {
-		advancedSpriteSetPosY(sprite,sprite->wY-2);
-	}
-	if(joyCheck(JOY1_DOWN)) {
-		advancedSpriteSetPosY(sprite,sprite->wY+2);
-	}
-	if(joyCheck(JOY1_LEFT)) {
-		advancedSpriteSetPosX(sprite,sprite->wX-2);
-	}
-	if(joyCheck(JOY1_RIGHT)) {
-		advancedSpriteSetPosX(sprite,sprite->wX+2);
-	}
-
-  if(joyCheck(JOY1_FIRE)) {
-    frame++;
-    if (frame>=10) {
-      frame=0;
-    }
-    advancedSpriteSetFrame(sprite,frame);
-	}
+  advancedSpriteSetPos(s_pEnemies,s_pEnemiesList[0].x,s_pEnemiesList[0].y);
+  advancedSpriteSetFrame(s_pEnemies, s_pEnemiesList[0].frame);
   
   
-  //advancedSpriteProcess(s_pASprite0);
-  //advancedSpriteProcessChannel(0,s_pASprite0); 
+  advancedSpriteProcess(s_pEnemies);
+  advancedSpriteProcessChannel(s_pEnemies); 
+
+  viewProcessManagers(s_pView);
 
   copProcessBlocks();
 
@@ -195,12 +201,8 @@ void gameGsDestroy(void) {
   systemUse();
 	fontDestroyTextBitMap(s_pTextBitMap);
 	fontDestroy(s_pFont);
-  randDestroy(g_sRand);
-  bitmapDestroy(s_pEnemies);
-}
+  advancedSpriteRemove(s_pEnemies);
   systemSetDmaBit(DMAB_SPRITE, 0); // Disable sprite DMA
-  advancedSpriteManagerDestroy();
-
-  // This will also destroy all associated viewports and viewport managers
+  spriteManagerDestroy();
   viewDestroy(s_pView);
 }

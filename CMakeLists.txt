@@ -60,7 +60,7 @@ file(MAKE_DIRECTORY ${DATA_DIR})
 
 file(COPY ${RES_DIR}/fonts/silkscreen.fnt DESTINATION ${DATA_DIR}/fonts)
 
-file(COPY ${RES_DIR}/flappypal6.plt DESTINATION ${DATA_DIR}/)
+convertPalette(${GAME_LINKED} ${RES_DIR}/W1-palette.gpl ${DATA_DIR}/W1-palette.plt)
 
 #enemies sprite
 convertPalette(${GAME_LINKED} ${RES_DIR}/sprite-palette.gpl ${DATA_DIR}/sprite-palette.plt)
@@ -69,4 +69,3 @@ convertBitmaps(
   INTERLEAVED SOURCES ${RES_DIR}/enemies-sprites.png
   DESTINATIONS ${DATA_DIR}/enemies-sprites.bm
 )
-

@@ -18,6 +18,14 @@
             "program": "${workspaceFolder}/build/hello",
             "kickstart": "${config:amiga.rom-paths.A1200}",
             "internalConsoleOptions": "openOnSessionStart"
-        }       
+        },
+        {
+            "type": "amiga",
+            "request": "launch",
+            "name": "AROS",
+            "config": "A1200-FAST",
+            "program": "${workspaceFolder}/build/hello",
+            "internalConsoleOptions": "openOnSessionStart"
+        },        
     ]
 }
