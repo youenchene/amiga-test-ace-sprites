@@ -69,3 +69,11 @@ convertBitmaps(
   INTERLEAVED SOURCES ${RES_DIR}/enemies-sprites.png
   DESTINATIONS ${DATA_DIR}/enemies-sprites.bm
 )
+
+#enemies sprite 4 colors
+convertPalette(${GAME_LINKED} ${RES_DIR}/sprite-palette-4.gpl ${DATA_DIR}/sprite-palette-4.plt)
+convertBitmaps(
+  TARGET ${GAME_LINKED} PALETTE ${RES_DIR}/sprite-palette-4.gpl
+  INTERLEAVED SOURCES ${RES_DIR}/Sprite-0001.png
+  DESTINATIONS ${DATA_DIR}/enemies-sprites-4.bm
+)

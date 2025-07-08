@@ -8,6 +8,7 @@
 #include <ace/managers/joy.h>
 #include <ace/utils/palette.h>
 #include <ace/managers/advancedsprite.h> 
+#include <ace/managers/multiplexedsprite.h> 
 #include <ace/utils/font.h>
 #include <ace/utils/custom.h>
 #include <ace/managers/rand.h>
@@ -65,9 +66,12 @@ static tTextBitMap *s_pTextBitMap;
 
 //static tBitMap *s_pEnemies;
 
+tBitMap **s_pEnemiesFrames;
+
 
 //Sprites
 static tAdvancedSprite *s_pEnemies;
+static tMultiplexedSprite *s_pEnemies4;
 
 typedef struct tEnemy {
 	WORD x;
@@ -139,10 +143,11 @@ void gameGsCreate(void) {
   blitRect(s_pMainBuffer->pBack,100, 146, 30, 20, 30);
   blitRect(s_pMainBuffer->pBack,120, 142, 20, 18, 30);
   
-  spriteManagerCreate(s_pView, 0);
+  spriteManagerCreate(s_pView, 0, NULL);
   systemSetDmaBit(DMAB_SPRITE, 1);
   
-  tBitMap *s_pSpriteEnemies=bitmapCreateFromPath("data/enemies-sprites.bm", 0);
+  /*tBitMap *s_pSpriteEnemies=bitmapCreateFromPath("data/enemies-sprites.bm", 0);
+
 
 
   s_pEnemiesList[0].x=310;
@@ -150,29 +155,84 @@ void gameGsCreate(void) {
   s_pEnemiesList[0].frame=5;
   s_pEnemiesList[0].speed=3;
 
-  s_pEnemies = advancedSpriteAdd(0, 16, s_pSpriteEnemies, NULL); // Add Main sprite to channel 0
+  s_pEnemies = advancedSpriteAdd(0, 16, s_pSpriteEnemies, NULL,0,1); // Add Main sprite to channel 0
 	bitmapDestroy(s_pSpriteEnemies);
 
 	advancedSpriteSetPos(s_pEnemies, s_pEnemiesList[0].x,s_pEnemiesList[0].y);
   advancedSpriteSetFrame(s_pEnemies,s_pEnemiesList[0].frame);
+  */
+
+  //s_pEnemiesList=(tEnemy *) memAllocFastClear(sizeof(tEnemy) * 10);
 
 
+  logWrite("#### Prepare Enemies...!");
+
+  for(UBYTE i=0;i<10;i++) {
+    s_pEnemiesList[i].x=0;
+    s_pEnemiesList[i].y=i*20;
+    s_pEnemiesList[i].frame=0;
+    s_pEnemiesList[i].speed=1 + i%2;
+  }
+
+
+  tBitMap *s_pSpriteEnemies4=bitmapCreateFromPath("data/enemies-sprites-4.bm", 0);
+
+  s_pEnemiesFrames=(tBitMap **)memAllocFastClear(sizeof(tBitMap*) * 3);
+
+  for(UBYTE i=0;i<3;i++) {
+    s_pEnemiesFrames[i]=bitmapCreate(
+        16, 10,
+        2, BMF_CLEAR | BMF_INTERLEAVED
+    );
+    blitCopy(
+      s_pSpriteEnemies4, 0, i*10,
+      s_pEnemiesFrames[i],
+      0, 0,
+      16, 10,
+      MINTERM_COOKIE
+    );
+  }
+  bitmapDestroy(s_pSpriteEnemies4);
+
+  
+  s_pEnemies4=spriteMultiplexedAdd(0,10,10);
+
+  
+  for(UBYTE i=0;i<10;i++) {
+    logWrite("#### Start feeding element %d", i);
+      spriteMultiplexedSetElement(s_pEnemies4, i, 10, 1, 0);
+      logWrite("#### Set Element !");
+      //spriteMultiplexedSetBitmap(s_pEnemies4, i, s_pEnemiesFrames[s_pEnemiesList[i].frame]);
+      logWrite("#### Set Bitmap !");
+      spriteMultiplexedSpriteSetPos(s_pEnemies4, i, s_pEnemiesList[i].x,s_pEnemiesList[i].y);
+      logWrite("#### Set Pos !");
+  }  
+      
+      
+
+  logWrite("#### Enemies initialized !");
+  
   systemUnuse();
+  logWrite("#### systemUnuse");
 
       // Load the view
   viewLoad(s_pView);
 
+   logWrite("#### View loaded !");
+
   // Reset blcon2 to put sprite in front of http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0159.html
   g_pCustom->bplcon2=0b00100000;
-  logWrite("Create Done !");
+  logWrite("#### Create Done !");
 }
 
 void gameGsLoop(void) {
+  logWrite("###> Loop");
   if(keyCheck(KEY_ESCAPE)) {
     gameExit();
     return; 
   }
 
+  /*
   s_pEnemiesList[0].x-=s_pEnemiesList[0].speed;
   if (s_pEnemiesList[0].x < -32) {
     s_pEnemiesList[0].x=320;
@@ -186,9 +246,28 @@ void gameGsLoop(void) {
   advancedSpriteSetPos(s_pEnemies,s_pEnemiesList[0].x,s_pEnemiesList[0].y);
   advancedSpriteSetFrame(s_pEnemies, s_pEnemiesList[0].frame);
   
-  
   advancedSpriteProcess(s_pEnemies);
   advancedSpriteProcessChannel(s_pEnemies); 
+  */
+
+  //READY TO BE TESTED
+
+  for(UBYTE i=0;i<10;i++) {
+    s_pEnemiesList[i].x+=s_pEnemiesList[i].speed;
+    if (s_pEnemiesList[i].x > 320) {
+      s_pEnemiesList[i].x=-16;
+    }
+    s_pEnemiesList[i].frame++;
+    if (s_pEnemiesList[i].frame > 2) {
+      s_pEnemiesList[i].frame=0;
+    }
+    spriteMultiplexedSpriteSetPos(s_pEnemies4, i, s_pEnemiesList[i].x,s_pEnemiesList[i].y);
+    spriteMultiplexedSetBitmap(s_pEnemies4, i, s_pEnemiesFrames[s_pEnemiesList[i].frame]);
+  }
+
+
+  spriteMultiplexedProcess(s_pEnemies4);
+  spriteMultiplexedProcessChannel(0);
 
   viewProcessManagers(s_pView);
 
