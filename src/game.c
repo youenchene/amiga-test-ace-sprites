@@ -9,7 +9,6 @@
 #include <ace/utils/palette.h>
 #include <ace/managers/advancedsprite.h> 
 #include <ace/managers/multiplexedsprite.h> 
-#include <ace/utils/font.h>
 #include <ace/utils/custom.h>
 #include <ace/managers/rand.h>
 
@@ -22,7 +21,7 @@
 #define PADDLE_HEIGHT 32
 #define PADDLE_LEFT_COLOR 2
 #define PADDLE_RIGHT_COLOR 3
-#define SCORE_COLOR 1
+#define SCORE_COLOR 4
 #define WALL_HEIGHT 1
 #define WALL_COLOR 1
 #define PLAYFIELD_HEIGHT (256-32)
@@ -33,7 +32,7 @@
 #define PADDLE_LEFT_BITMAP_OFFSET_Y 0
 #define PADDLE_RIGHT_BITMAP_OFFSET_Y PADDLE_HEIGHT
 #define BALL_BITMAP_OFFSET_Y (PADDLE_RIGHT_BITMAP_OFFSET_Y + PADDLE_HEIGHT)
-
+#define NUMBER_OF_MULTIPLEXED_SPRITES 3 
 
 static tView *s_pView; // View containing all the viewports
 static tVPort *s_pVpScore; // Viewport for score
@@ -56,9 +55,6 @@ static UWORD s_pPalette[32];
 
 //tRandManager *g_sRand;
 
-static tFont *s_pFont;
-static tTextBitMap *s_pTextBitMap;
-
 //static int frame=0;
 
 //static int spritecontrol=0;
@@ -80,7 +76,7 @@ typedef struct tEnemy {
   UBYTE speed;
 } tEnemy;
 
-tEnemy s_pEnemiesList[10];
+tEnemy **s_pEnemiesList;
 
 
 void gameGsCreate(void) {
@@ -96,7 +92,7 @@ void gameGsCreate(void) {
 		TAG_VPORT_VIEW, s_pView,
 		TAG_VPORT_BPP, 5,
 		TAG_VPORT_HEIGHT, 16,
-	TAG_END);
+    	TAG_END);
 
 	s_pScoreBuffer = simpleBufferCreate(0,
 		TAG_SIMPLEBUFFER_VPORT, s_pVpScore,
@@ -115,9 +111,6 @@ void gameGsCreate(void) {
     TAG_SIMPLEBUFFER_VPORT, s_pVpMain,
     TAG_SIMPLEBUFFER_BITMAP_FLAGS, BMF_CLEAR | BMF_INTERLEAVED,
   TAG_END);
-
-  s_pFont = fontCreateFromPath("data/fonts/silkscreen.fnt");
-	s_pTextBitMap = fontCreateTextBitMap(320, s_pFont->uwHeight);
 
   paletteLoadFromPath("data/W1-palette.plt", s_pPalette, 32);
 	memcpy(s_pVpScore->pPalette, s_pPalette, sizeof(s_pVpScore->pPalette));
@@ -143,12 +136,10 @@ void gameGsCreate(void) {
   blitRect(s_pMainBuffer->pBack,100, 146, 30, 20, 30);
   blitRect(s_pMainBuffer->pBack,120, 142, 20, 18, 30);
   
-  spriteManagerCreate(s_pView, 0, NULL);
+  spriteManagerCreate(s_pView, 0, 0);
   systemSetDmaBit(DMAB_SPRITE, 1);
   
   /*tBitMap *s_pSpriteEnemies=bitmapCreateFromPath("data/enemies-sprites.bm", 0);
-
-
 
   s_pEnemiesList[0].x=310;
   s_pEnemiesList[0].y=40;
@@ -162,18 +153,20 @@ void gameGsCreate(void) {
   advancedSpriteSetFrame(s_pEnemies,s_pEnemiesList[0].frame);
   */
 
-  //s_pEnemiesList=(tEnemy *) memAllocFastClear(sizeof(tEnemy) * 10);
+  s_pEnemiesList=(tEnemy **) memAllocFastClear(sizeof(tEnemy*) * NUMBER_OF_MULTIPLEXED_SPRITES);
 
 
   logWrite("#### Prepare Enemies...!");
 
-  for(UBYTE i=0;i<10;i++) {
-    s_pEnemiesList[i].x=0;
-    s_pEnemiesList[i].y=i*20;
-    s_pEnemiesList[i].frame=0;
-    s_pEnemiesList[i].speed=1 + i%2;
+  for(UBYTE i=0;i<NUMBER_OF_MULTIPLEXED_SPRITES;i++) {
+    s_pEnemiesList[i] = memAllocFastClear(sizeof(tEnemy));
+    s_pEnemiesList[i]->x=0;
+    s_pEnemiesList[i]->y=i*20;
+    s_pEnemiesList[i]->frame=0;
+    s_pEnemiesList[i]->speed=1 + i%2;
   }
 
+  logWrite("#### Prepare Enemies Frames...!");
 
   tBitMap *s_pSpriteEnemies4=bitmapCreateFromPath("data/enemies-sprites-4.bm", 0);
 
@@ -194,21 +187,18 @@ void gameGsCreate(void) {
   }
   bitmapDestroy(s_pSpriteEnemies4);
 
-  
-  s_pEnemies4=spriteMultiplexedAdd(0,10,10);
+  s_pEnemies4=spriteMultiplexedAdd(0,10,NUMBER_OF_MULTIPLEXED_SPRITES);
 
-  
-  for(UBYTE i=0;i<10;i++) {
+
+  for(UBYTE i=0;i<NUMBER_OF_MULTIPLEXED_SPRITES;i++) {
     logWrite("#### Start feeding element %d", i);
       spriteMultiplexedSetElement(s_pEnemies4, i, 10, 1, 0);
       logWrite("#### Set Element !");
-      //spriteMultiplexedSetBitmap(s_pEnemies4, i, s_pEnemiesFrames[s_pEnemiesList[i].frame]);
+      spriteMultiplexedSetBitmap(s_pEnemies4, i, s_pEnemiesFrames[s_pEnemiesList[i]->frame]);
       logWrite("#### Set Bitmap !");
-      spriteMultiplexedSpriteSetPos(s_pEnemies4, i, s_pEnemiesList[i].x,s_pEnemiesList[i].y);
+      spriteMultiplexedSpriteSetPos(s_pEnemies4, i, s_pEnemiesList[i]->x,s_pEnemiesList[i]->y);
       logWrite("#### Set Pos !");
-  }  
-      
-      
+  }
 
   logWrite("#### Enemies initialized !");
   
@@ -252,24 +242,24 @@ void gameGsLoop(void) {
 
   //READY TO BE TESTED
 
-  for(UBYTE i=0;i<10;i++) {
-    s_pEnemiesList[i].x+=s_pEnemiesList[i].speed;
-    if (s_pEnemiesList[i].x > 320) {
-      s_pEnemiesList[i].x=-16;
+  for(UBYTE i=0;i<NUMBER_OF_MULTIPLEXED_SPRITES;i++) {
+    s_pEnemiesList[i]->x+=s_pEnemiesList[i]->speed;
+    if (s_pEnemiesList[i]->x > 320) {
+      s_pEnemiesList[i]->x=-16;
     }
-    s_pEnemiesList[i].frame++;
-    if (s_pEnemiesList[i].frame > 2) {
-      s_pEnemiesList[i].frame=0;
+    s_pEnemiesList[i]->frame++;
+    if (s_pEnemiesList[i]->frame > 2) {
+      s_pEnemiesList[i]->frame=0;
     }
-    spriteMultiplexedSpriteSetPos(s_pEnemies4, i, s_pEnemiesList[i].x,s_pEnemiesList[i].y);
-    spriteMultiplexedSetBitmap(s_pEnemies4, i, s_pEnemiesFrames[s_pEnemiesList[i].frame]);
+    spriteMultiplexedSpriteSetPos(s_pEnemies4, i, s_pEnemiesList[i]->x,s_pEnemiesList[i]->y);
+    spriteMultiplexedSetBitmap(s_pEnemies4, i, s_pEnemiesFrames[s_pEnemiesList[i]->frame]);
   }
 
 
   spriteMultiplexedProcess(s_pEnemies4);
   spriteMultiplexedProcessChannel(0);
 
-  viewProcessManagers(s_pView);
+  //viewProcessManagers(s_pView);
 
   copProcessBlocks();
 
@@ -278,8 +268,6 @@ void gameGsLoop(void) {
 
 void gameGsDestroy(void) {
   systemUse();
-	fontDestroyTextBitMap(s_pTextBitMap);
-	fontDestroy(s_pFont);
   advancedSpriteRemove(s_pEnemies);
   systemSetDmaBit(DMAB_SPRITE, 0); // Disable sprite DMA
   spriteManagerDestroy();
