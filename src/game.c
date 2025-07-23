@@ -7,6 +7,7 @@
 #include <ace/managers/blit.h> // Blitting fns
 #include <ace/managers/joy.h>
 #include <ace/utils/palette.h>
+#include <ace/managers/sprite.h> 
 #include <ace/managers/advancedsprite.h> 
 #include <ace/managers/multiplexedsprite.h> 
 #include <ace/utils/custom.h>
@@ -63,6 +64,9 @@ static UWORD s_pPalette[32];
 //static tBitMap *s_pEnemies;
 
 tBitMap **s_pEnemiesFrames;
+
+
+tSprite *s_pSprite1;
 
 
 //Sprites
@@ -153,6 +157,9 @@ void gameGsCreate(void) {
   advancedSpriteSetFrame(s_pEnemies,s_pEnemiesList[0].frame);
   */
 
+  
+  
+  
   s_pEnemiesList=(tEnemy **) memAllocFastClear(sizeof(tEnemy*) * NUMBER_OF_MULTIPLEXED_SPRITES);
 
 
@@ -167,6 +174,7 @@ void gameGsCreate(void) {
   }
 
   logWrite("#### Prepare Enemies Frames...!");
+  
 
   tBitMap *s_pSpriteEnemies4=bitmapCreateFromPath("data/enemies-sprites-4.bm", 0);
 
@@ -187,6 +195,7 @@ void gameGsCreate(void) {
   }
   bitmapDestroy(s_pSpriteEnemies4);
 
+
   s_pEnemies4=spriteMultiplexedAdd(0,10,NUMBER_OF_MULTIPLEXED_SPRITES);
 
 
@@ -202,6 +211,15 @@ void gameGsCreate(void) {
 
   logWrite("#### Enemies initialized !");
   
+
+   blitCopy(s_pEnemiesFrames[0],0,0,s_pMainBuffer->pBack,50, 50, 16, 10, MINTERM_COOKIE);
+
+  s_pSprite1=spriteAdd(1, s_pEnemiesFrames[0]);
+  spriteSetEnabled(s_pSprite1, 1);
+  s_pSprite1->wX=150;
+  s_pSprite1->wY=100;
+  logWrite("#### TEST Sprite added !");
+  
   systemUnuse();
   logWrite("#### systemUnuse");
 
@@ -212,6 +230,11 @@ void gameGsCreate(void) {
 
   // Reset blcon2 to put sprite in front of http://amigadev.elowar.com/read/ADCD_2.1/Hardware_Manual_guide/node0159.html
   g_pCustom->bplcon2=0b00100000;
+
+ 
+  spriteProcess(s_pSprite1);
+  spriteProcessChannel(1);
+
   logWrite("#### Create Done !");
 }
 
@@ -239,8 +262,11 @@ void gameGsLoop(void) {
   advancedSpriteProcess(s_pEnemies);
   advancedSpriteProcessChannel(s_pEnemies); 
   */
+  
 
   //READY TO BE TESTED
+
+
 
   for(UBYTE i=0;i<NUMBER_OF_MULTIPLEXED_SPRITES;i++) {
     s_pEnemiesList[i]->x+=s_pEnemiesList[i]->speed;
@@ -257,9 +283,13 @@ void gameGsLoop(void) {
 
 
   spriteMultiplexedProcess(s_pEnemies4);
-  spriteMultiplexedProcessChannel(0);
+  spriteProcess(s_pSprite1);
 
-  //viewProcessManagers(s_pView);
+
+  spriteMultiplexedProcessChannel(0);
+  spriteProcessChannel(1);
+
+  viewProcessManagers(s_pView);
 
   copProcessBlocks();
 
@@ -270,6 +300,7 @@ void gameGsDestroy(void) {
   systemUse();
   advancedSpriteRemove(s_pEnemies);
   systemSetDmaBit(DMAB_SPRITE, 0); // Disable sprite DMA
+  spriteRemove(s_pSprite1);
   spriteManagerDestroy();
   viewDestroy(s_pView);
 }
