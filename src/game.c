@@ -33,7 +33,7 @@
 #define PADDLE_LEFT_BITMAP_OFFSET_Y 0
 #define PADDLE_RIGHT_BITMAP_OFFSET_Y PADDLE_HEIGHT
 #define BALL_BITMAP_OFFSET_Y (PADDLE_RIGHT_BITMAP_OFFSET_Y + PADDLE_HEIGHT)
-#define NUMBER_OF_MULTIPLEXED_SPRITES 3 
+#define NUMBER_OF_MULTIPLEXED_SPRITES 12
 
 static tView *s_pView; // View containing all the viewports
 static tVPort *s_pVpScore; // Viewport for score
@@ -141,6 +141,7 @@ void gameGsCreate(void) {
   blitRect(s_pMainBuffer->pBack,120, 142, 20, 18, 30);
   
   spriteManagerCreate(s_pView, 0, 0);
+  spriteMultiplexedManagerCreate(s_pView, 0, 0);
   systemSetDmaBit(DMAB_SPRITE, 1);
   
   /*tBitMap *s_pSpriteEnemies=bitmapCreateFromPath("data/enemies-sprites.bm", 0);
@@ -168,9 +169,9 @@ void gameGsCreate(void) {
   for(UBYTE i=0;i<NUMBER_OF_MULTIPLEXED_SPRITES;i++) {
     s_pEnemiesList[i] = memAllocFastClear(sizeof(tEnemy));
     s_pEnemiesList[i]->x=0;
-    s_pEnemiesList[i]->y=i*20;
+    s_pEnemiesList[i]->y=18+i*20;
     s_pEnemiesList[i]->frame=0;
-    s_pEnemiesList[i]->speed=1 + i%2;
+    s_pEnemiesList[i]->speed=1 + i%3;
   }
 
   logWrite("#### Prepare Enemies Frames...!");
@@ -212,13 +213,20 @@ void gameGsCreate(void) {
   logWrite("#### Enemies initialized !");
   
 
+  /**
    blitCopy(s_pEnemiesFrames[0],0,0,s_pMainBuffer->pBack,50, 50, 16, 10, MINTERM_COOKIE);
+   blitCopy(s_pEnemiesFrames[1],0,0,s_pMainBuffer->pBack,50, 70, 16, 10, MINTERM_COOKIE);
+   blitCopy(s_pEnemiesFrames[2],0,0,s_pMainBuffer->pBack,50, 90, 16, 10, MINTERM_COOKIE);
+   blitCopy(s_pEnemies4->pMultiplexedSpriteElement[0]->pBitmap,0,0,s_pMainBuffer->pBack,50, 110, 16, 10, MINTERM_COOKIE);
+   */
 
+   /*
   s_pSprite1=spriteAdd(1, s_pEnemiesFrames[0]);
   spriteSetEnabled(s_pSprite1, 1);
   s_pSprite1->wX=150;
   s_pSprite1->wY=100;
   logWrite("#### TEST Sprite added !");
+  */
   
   systemUnuse();
   logWrite("#### systemUnuse");
@@ -268,19 +276,20 @@ void gameGsLoop(void) {
 
 
 
-  for(UBYTE i=0;i<NUMBER_OF_MULTIPLEXED_SPRITES;i++) {
-    s_pEnemiesList[i]->x+=s_pEnemiesList[i]->speed;
-    if (s_pEnemiesList[i]->x > 320) {
-      s_pEnemiesList[i]->x=-16;
+  //if(keyCheck(KEY_SPACE)) {
+    for(UBYTE i=0;i<NUMBER_OF_MULTIPLEXED_SPRITES;i++) {
+      s_pEnemiesList[i]->x+=s_pEnemiesList[i]->speed;
+      if (s_pEnemiesList[i]->x > 320) {
+        s_pEnemiesList[i]->x=-16;
+      }
+      s_pEnemiesList[i]->frame++;
+      if (s_pEnemiesList[i]->frame > 2) {
+        s_pEnemiesList[i]->frame=0;
+      }
+      spriteMultiplexedSpriteSetPos(s_pEnemies4, i, s_pEnemiesList[i]->x,s_pEnemiesList[i]->y);
+      spriteMultiplexedSetBitmap(s_pEnemies4, i, s_pEnemiesFrames[s_pEnemiesList[i]->frame]);
     }
-    s_pEnemiesList[i]->frame++;
-    if (s_pEnemiesList[i]->frame > 2) {
-      s_pEnemiesList[i]->frame=0;
-    }
-    spriteMultiplexedSpriteSetPos(s_pEnemies4, i, s_pEnemiesList[i]->x,s_pEnemiesList[i]->y);
-    spriteMultiplexedSetBitmap(s_pEnemies4, i, s_pEnemiesFrames[s_pEnemiesList[i]->frame]);
-  }
-
+  //}
 
   spriteMultiplexedProcess(s_pEnemies4);
   spriteProcess(s_pSprite1);
