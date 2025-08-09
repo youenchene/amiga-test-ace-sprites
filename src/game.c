@@ -8,7 +8,7 @@
 #include <ace/managers/joy.h>
 #include <ace/utils/palette.h>
 #include <ace/managers/sprite.h> 
-#include <ace/managers/advancedsprite.h> 
+#include <ace/managers/advancedmultiplexedsprite.h> 
 #include <ace/managers/multiplexedsprite.h> 
 #include <ace/utils/custom.h>
 #include <ace/managers/rand.h>
@@ -34,6 +34,7 @@
 #define PADDLE_RIGHT_BITMAP_OFFSET_Y PADDLE_HEIGHT
 #define BALL_BITMAP_OFFSET_Y (PADDLE_RIGHT_BITMAP_OFFSET_Y + PADDLE_HEIGHT)
 #define NUMBER_OF_MULTIPLEXED_SPRITES 12
+#define NUMBER_OF_BIG_MULTIPLEXED_SPRITES 3
 
 static tView *s_pView; // View containing all the viewports
 static tVPort *s_pVpScore; // Viewport for score
@@ -61,16 +62,16 @@ static UWORD s_pPalette[32];
 //static int spritecontrol=0;
 
 
-//static tBitMap *s_pEnemies;
+//static tBitMap *s_pBigEnemies;
 
 tBitMap **s_pEnemiesFrames;
 
 
-tSprite *s_pSprite1;
+//tSprite *s_pSprite1;
 
 
 //Sprites
-static tAdvancedSprite *s_pEnemies;
+static tAdvancedMultiplexedSprite *s_pBigEnemies;
 static tMultiplexedSprite *s_pEnemies4;
 
 typedef struct tEnemy {
@@ -81,6 +82,7 @@ typedef struct tEnemy {
 } tEnemy;
 
 tEnemy **s_pEnemiesList;
+tEnemy **s_pBigEnemiesList;
 
 
 void gameGsCreate(void) {
@@ -144,22 +146,48 @@ void gameGsCreate(void) {
   spriteMultiplexedManagerCreate(s_pView, 0, 0);
   systemSetDmaBit(DMAB_SPRITE, 1);
   
-  /*tBitMap *s_pSpriteEnemies=bitmapCreateFromPath("data/enemies-sprites.bm", 0);
 
-  s_pEnemiesList[0].x=310;
-  s_pEnemiesList[0].y=40;
-  s_pEnemiesList[0].frame=5;
-  s_pEnemiesList[0].speed=3;
+  // big sprites
+  logWrite("#### Prepare BIG Enemies...!");
 
-  s_pEnemies = advancedSpriteAdd(0, 16, s_pSpriteEnemies, NULL,0,1); // Add Main sprite to channel 0
-	bitmapDestroy(s_pSpriteEnemies);
+  tBitMap *s_pBigSpriteEnemies=bitmapCreateFromPath("data/enemies-sprites.bm", 0);
 
-	advancedSpriteSetPos(s_pEnemies, s_pEnemiesList[0].x,s_pEnemiesList[0].y);
-  advancedSpriteSetFrame(s_pEnemies,s_pEnemiesList[0].frame);
-  */
+  logWrite("#### BIG Enemies bitmap loaded...!");
+  s_pBigEnemiesList=(tEnemy **) memAllocFastClear(sizeof(tEnemy*) * NUMBER_OF_BIG_MULTIPLEXED_SPRITES);
 
+  //s_pBigEnemiesList[0] = memAllocFastClear(sizeof(tEnemy));
+  s_pBigEnemiesList[0]->x=310;
+  s_pBigEnemiesList[0]->y=40;
+  s_pEnemiesList[0]->frame=5;
+  s_pEnemiesList[0]->speed=3;
+
+  //s_pBigEnemiesList[1] = memAllocFastClear(sizeof(tEnemy));
+  s_pBigEnemiesList[1]->x=310;
+  s_pBigEnemiesList[1]->y=60;
+  s_pEnemiesList[1]->frame=5;
+  s_pEnemiesList[1]->speed=1;
   
+  //s_pBigEnemiesList[2] = memAllocFastClear(sizeof(tEnemy));
+  s_pBigEnemiesList[2]->x=310;
+  s_pBigEnemiesList[2]->y=90;
+  s_pEnemiesList[2]->frame=3;
+  s_pEnemiesList[2]->speed=2;
+
+  logWrite("#### BIG Enemies data initialized...!");
+
+  s_pBigEnemies = advancedMultiplexedSpriteAdd(4, s_pBigSpriteEnemies, NULL,16,3); // heigth 16, and 3 multiplexed sprites)
+	bitmapDestroy(s_pBigSpriteEnemies);
+
+  logWrite("#### BIG Enemies  advanced multiplexed sprite initialized...!");
+
+  for(UBYTE i=0;i<NUMBER_OF_BIG_MULTIPLEXED_SPRITES;i++) {
+    advancedMultiplexedSpriteSetPos(s_pBigEnemies,i,s_pBigEnemiesList[i]->x,s_pBigEnemiesList[i]->y);
+    advancedMultiplexedSpriteSetFrame(s_pBigEnemies,i,s_pBigEnemiesList[i]->frame);
+  }
+
+    logWrite("#### BIG Enemies  advanced multiplexed sprite setpos setframe ...!");
   
+ // Small sprites  
   
   s_pEnemiesList=(tEnemy **) memAllocFastClear(sizeof(tEnemy*) * NUMBER_OF_MULTIPLEXED_SPRITES);
 
@@ -240,8 +268,8 @@ void gameGsCreate(void) {
   g_pCustom->bplcon2=0b00100000;
 
  
-  spriteProcess(s_pSprite1);
-  spriteProcessChannel(1);
+  advancedMultiplexedSpriteProcess(s_pBigEnemies);
+  advancedMultiplexedSpriteProcessChannel(s_pBigEnemies);
 
   logWrite("#### Create Done !");
 }
@@ -253,28 +281,24 @@ void gameGsLoop(void) {
     return; 
   }
 
-  /*
-  s_pEnemiesList[0].x-=s_pEnemiesList[0].speed;
-  if (s_pEnemiesList[0].x < -32) {
-    s_pEnemiesList[0].x=320;
-  }
-  s_pEnemiesList[0].y=40;
-  s_pEnemiesList[0].frame++;
-  if (s_pEnemiesList[0].frame > 9) {
-    s_pEnemiesList[0].frame=5;
+  
+  for(UBYTE i=0;i<NUMBER_OF_BIG_MULTIPLEXED_SPRITES;i++) {
+    s_pBigEnemiesList[i]->x=s_pBigEnemiesList[i]->x-s_pBigEnemiesList[i]->speed;
+    if (s_pBigEnemiesList[i]->x < -32) {
+      s_pBigEnemiesList[i]->x=320;
+    }
+    s_pBigEnemiesList[i]->frame=s_pBigEnemiesList[i]->frame+1;
+    if (s_pBigEnemiesList[i]->frame > 9) {
+      s_pBigEnemiesList[i]->frame=5;
+    } 
+
+    advancedMultiplexedSpriteSetPos(s_pBigEnemies,i,s_pBigEnemiesList[i]->x,s_pBigEnemiesList[i]->y);
+    advancedMultiplexedSpriteSetFrame(s_pBigEnemies,i, s_pBigEnemiesList[i]->frame);
   } 
 
-  advancedSpriteSetPos(s_pEnemies,s_pEnemiesList[0].x,s_pEnemiesList[0].y);
-  advancedSpriteSetFrame(s_pEnemies, s_pEnemiesList[0].frame);
-  
-  advancedSpriteProcess(s_pEnemies);
-  advancedSpriteProcessChannel(s_pEnemies); 
-  */
   
 
   //READY TO BE TESTED
-
-
 
   //if(keyCheck(KEY_SPACE)) {
     for(UBYTE i=0;i<NUMBER_OF_MULTIPLEXED_SPRITES;i++) {
@@ -292,11 +316,11 @@ void gameGsLoop(void) {
   //}
 
   spriteMultiplexedProcess(s_pEnemies4);
-  spriteProcess(s_pSprite1);
 
+  advancedMultiplexedSpriteProcess(s_pBigEnemies);
+  advancedMultiplexedSpriteProcessChannel(s_pBigEnemies);
 
   spriteMultiplexedProcessChannel(0);
-  spriteProcessChannel(1);
 
   viewProcessManagers(s_pView);
 
@@ -307,9 +331,9 @@ void gameGsLoop(void) {
 
 void gameGsDestroy(void) {
   systemUse();
-  advancedSpriteRemove(s_pEnemies);
+  spriteMultiplexedRemove(s_pEnemies4);
+  advancedMultiplexedSpriteRemove(s_pBigEnemies);
   systemSetDmaBit(DMAB_SPRITE, 0); // Disable sprite DMA
-  spriteRemove(s_pSprite1);
   spriteManagerDestroy();
   viewDestroy(s_pView);
 }
