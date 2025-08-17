@@ -148,51 +148,51 @@ void gameGsCreate(void) {
   
 
   // big sprites
-  logWrite("#### Prepare BIG Enemies...!");
+  logWrite("#### Prepare BIG Enemies...");
 
   tBitMap *s_pBigSpriteEnemies=bitmapCreateFromPath("data/enemies-sprites.bm", 0);
 
-  logWrite("#### BIG Enemies bitmap loaded...!");
+  logWrite("#### BIG Enemies bitmap loaded...");
   s_pBigEnemiesList=(tEnemy **) memAllocFastClear(sizeof(tEnemy*) * NUMBER_OF_BIG_MULTIPLEXED_SPRITES);
 
-  //s_pBigEnemiesList[0] = memAllocFastClear(sizeof(tEnemy));
+  s_pBigEnemiesList[0] = memAllocFastClear(sizeof(tEnemy));
   s_pBigEnemiesList[0]->x=310;
   s_pBigEnemiesList[0]->y=40;
-  s_pEnemiesList[0]->frame=5;
-  s_pEnemiesList[0]->speed=3;
+  s_pBigEnemiesList[0]->frame=5;
+  s_pBigEnemiesList[0]->speed=3;
 
-  //s_pBigEnemiesList[1] = memAllocFastClear(sizeof(tEnemy));
+  s_pBigEnemiesList[1] = memAllocFastClear(sizeof(tEnemy));
   s_pBigEnemiesList[1]->x=310;
   s_pBigEnemiesList[1]->y=60;
-  s_pEnemiesList[1]->frame=5;
-  s_pEnemiesList[1]->speed=1;
+  s_pBigEnemiesList[1]->frame=5;
+  s_pBigEnemiesList[1]->speed=1;
   
-  //s_pBigEnemiesList[2] = memAllocFastClear(sizeof(tEnemy));
+  s_pBigEnemiesList[2] = memAllocFastClear(sizeof(tEnemy));
   s_pBigEnemiesList[2]->x=310;
   s_pBigEnemiesList[2]->y=90;
-  s_pEnemiesList[2]->frame=3;
-  s_pEnemiesList[2]->speed=2;
+  s_pBigEnemiesList[2]->frame=3;
+  s_pBigEnemiesList[2]->speed=2;
 
-  logWrite("#### BIG Enemies data initialized...!");
+  logWrite("#### BIG Enemies data initialized...");
 
   s_pBigEnemies = advancedMultiplexedSpriteAdd(4, s_pBigSpriteEnemies, NULL,16,3); // heigth 16, and 3 multiplexed sprites)
 	bitmapDestroy(s_pBigSpriteEnemies);
 
-  logWrite("#### BIG Enemies  advanced multiplexed sprite initialized...!");
+  logWrite("#### BIG Enemies  advanced multiplexed sprite initialized...");
 
   for(UBYTE i=0;i<NUMBER_OF_BIG_MULTIPLEXED_SPRITES;i++) {
     advancedMultiplexedSpriteSetPos(s_pBigEnemies,i,s_pBigEnemiesList[i]->x,s_pBigEnemiesList[i]->y);
     advancedMultiplexedSpriteSetFrame(s_pBigEnemies,i,s_pBigEnemiesList[i]->frame);
   }
 
-    logWrite("#### BIG Enemies  advanced multiplexed sprite setpos setframe ...!");
+  //logWrite("#### BIG Enemies  advanced multiplexed sprite setpos setframe ...!");
   
  // Small sprites  
   
   s_pEnemiesList=(tEnemy **) memAllocFastClear(sizeof(tEnemy*) * NUMBER_OF_MULTIPLEXED_SPRITES);
 
 
-  logWrite("#### Prepare Enemies...!");
+ //logWrite("#### Prepare Enemies...!");
 
   for(UBYTE i=0;i<NUMBER_OF_MULTIPLEXED_SPRITES;i++) {
     s_pEnemiesList[i] = memAllocFastClear(sizeof(tEnemy));
@@ -202,7 +202,7 @@ void gameGsCreate(void) {
     s_pEnemiesList[i]->speed=1 + i%3;
   }
 
-  logWrite("#### Prepare Enemies Frames...!");
+  logWrite("#### Prepare Enemies Frames...");
   
 
   tBitMap *s_pSpriteEnemies4=bitmapCreateFromPath("data/enemies-sprites-4.bm", 0);
