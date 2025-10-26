@@ -34,7 +34,7 @@
 #define PADDLE_RIGHT_BITMAP_OFFSET_Y PADDLE_HEIGHT
 #define BALL_BITMAP_OFFSET_Y (PADDLE_RIGHT_BITMAP_OFFSET_Y + PADDLE_HEIGHT)
 #define NUMBER_OF_MULTIPLEXED_SPRITES 12
-#define NUMBER_OF_BIG_MULTIPLEXED_SPRITES 3
+#define NUMBER_OF_BIG_MULTIPLEXED_SPRITES 2
 
 static tView *s_pView; // View containing all the viewports
 static tVPort *s_pVpScore; // Viewport for score
@@ -77,7 +77,7 @@ static tMultiplexedSprite *s_pEnemies4;
 typedef struct tEnemy {
 	WORD x;
 	WORD y;
-  UBYTE frame;
+  UWORD frame;
   UBYTE speed;
 } tEnemy;
 
@@ -175,24 +175,25 @@ void gameGsCreate(void) {
 
   logWrite("#### BIG Enemies data initialized...");
 
-  s_pBigEnemies = advancedMultiplexedSpriteAdd(4, s_pBigSpriteEnemies, NULL,16,3); // heigth 16, and 3 multiplexed sprites)
+  s_pBigEnemies = advancedMultiplexedSpriteAdd(0, s_pBigSpriteEnemies, NULL,16,3); // heigth 16, and 3 multiplexed sprites)
 	bitmapDestroy(s_pBigSpriteEnemies);
-
   logWrite("#### BIG Enemies  advanced multiplexed sprite initialized...");
 
   for(UBYTE i=0;i<NUMBER_OF_BIG_MULTIPLEXED_SPRITES;i++) {
+    advancedMultiplexedSpriteSetEnabled(s_pBigEnemies,i,1);
     advancedMultiplexedSpriteSetPos(s_pBigEnemies,i,s_pBigEnemiesList[i]->x,s_pBigEnemiesList[i]->y);
     advancedMultiplexedSpriteSetFrame(s_pBigEnemies,i,s_pBigEnemiesList[i]->frame);
   }
 
-  //logWrite("#### BIG Enemies  advanced multiplexed sprite setpos setframe ...!");
+  logWrite("#### BIG Enemies  advanced multiplexed sprite setpos setframe ...!");
   
  // Small sprites  
   
+ /*
   s_pEnemiesList=(tEnemy **) memAllocFastClear(sizeof(tEnemy*) * NUMBER_OF_MULTIPLEXED_SPRITES);
 
 
- //logWrite("#### Prepare Enemies...!");
+ logWrite("#### Prepare Enemies...!");
 
   for(UBYTE i=0;i<NUMBER_OF_MULTIPLEXED_SPRITES;i++) {
     s_pEnemiesList[i] = memAllocFastClear(sizeof(tEnemy));
@@ -239,9 +240,11 @@ void gameGsCreate(void) {
   }
 
   logWrite("#### Enemies initialized !");
+
+  */
   
 
-  /**
+  /*
    blitCopy(s_pEnemiesFrames[0],0,0,s_pMainBuffer->pBack,50, 50, 16, 10, MINTERM_COOKIE);
    blitCopy(s_pEnemiesFrames[1],0,0,s_pMainBuffer->pBack,50, 70, 16, 10, MINTERM_COOKIE);
    blitCopy(s_pEnemiesFrames[2],0,0,s_pMainBuffer->pBack,50, 90, 16, 10, MINTERM_COOKIE);
